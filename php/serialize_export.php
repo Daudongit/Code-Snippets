@@ -15,4 +15,4 @@ file_put_contents(
     '<?php return '.var_export( $array_data, true ).";\n"
 );
 
-$data = file_get_contents('path/to/save/file.php');
+$data = include('path/to/save/file.php');
