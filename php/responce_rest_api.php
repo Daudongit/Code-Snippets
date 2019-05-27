@@ -1,5 +1,5 @@
 <?php
-
+//A sample good BaseController for REST API in laravel
 
 namespace App\Http\Controllers\API;
 
