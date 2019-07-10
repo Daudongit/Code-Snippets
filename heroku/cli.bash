@@ -7,8 +7,11 @@ heroku login
 #create new application in heroku for your project
 heroku create <myappname>
 
-#create Procfile in project root for heroku
+#create Procfile in project root for heroku (Laravel php)
 echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile
+
+#create Procfile in project root for heroku(Adonisjs Nodejs)
+echo "web: ENV_SILENT=true npm start" > Procfile
 
 #create key/value configuration for your app on heroku
 heroku config:set VAR_NAME=VAR_VALUE
