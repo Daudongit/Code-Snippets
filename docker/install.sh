@@ -1,19 +1,19 @@
 #!/bin/bash
 
 #install docker on centos
-sudo yum check-update
+yum check-update
 
-sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+yum install -y yum-utils device-mapper-persistent-data lvm2
 
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-sudo yum install docker
+yum install docker
 
-sudo systemctl start docker
+systemctl start docker
 
-sudo systemctl enable docker
+systemctl enable docker
 
-sudo systemctl status docker
+systemctl status docker
 
 #choose a specific version of Docker to install
 

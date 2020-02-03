@@ -1,0 +1,135 @@
+# ec2 centos7
+#
+# Run this script like this: aws cloudformation create-stack --region us-west-2 --stack-name prodstack --template-body file:///opt/cfstacks/prodstack.template --parameters file:///opt/cfstacks/prodstack_parameters.json
+# OR run aws cloudformation create-stack \
+#           --region us-east-2 \
+#           --stack-name ec2prodstack \
+#           --template-body file://ec2_with_param.yml \
+#           --parameters ParameterKey=SubnetIdParameter,ParameterValue=subnet-6b347d11 ParameterKey=VpcIdParameter,ParameterValue=vpc-8f7c94e4
+#
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Private VPC and resources for PROD."
+Parameters: 
+    SubnetIdParameter: 
+      Description: subnetId for ec2
+      Type: String
+    VpcIdParameter: 
+      Description: vpcId for ec2
+      Type: String
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+    #   ImageId: "ami-0d4c3eabb9e72650a"
+      ImageId: "ami-0f2b4fc905b0bd1f1"
+      InstanceType: "t2.micro"
+      SubnetId: !Ref SubnetIdParameter
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeType: "gp2"
+            #Iops: "200"
+            DeleteOnTermination: "true"
+            VolumeSize: "10"
+        - DeviceName: "/dev/sdk"
+          NoDevice: {}
+      UserData:
+        Fn::Base64:                                # YAML makes userdata much cleaner
+          !Sub |
+              #!/bin/bash -ex
+              /usr/bin/hostnamectl set-hostname ProdMaster;
+              yum -y update;
+              /usr/bin/sed -i -e 's/PasswordAuthentication\ no/PasswordAuthentication\ yes/g' /etc/ssh/sshd_config;
+              /sbin/useradd -p $( /usr/bin/echo '8iu7*IU&' | openssl passwd -1 -stdin) linuxjobber;
+              echo 'linuxjobber  ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers;
+              /usr/bin/systemctl restart sshd.service;
+      Tags:
+      - Key: Name
+        Value: ProdMaster
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "this is PROD required Ports"
+      VpcId: !Ref VpcIdParameter
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80 
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 5000
+        ToPort: 5000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 7000
+        ToPort: 7000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 4000
+        ToPort: 4000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        CidrIp: 0.0.0.0/0    
+      - IpProtocol: tcp
+        FromPort: 8000
+        ToPort: 8000
+        CidrIp: 0.0.0.0/0     
+      - IpProtocol: tcp
+        FromPort: 58500
+        ToPort: 58500
+        CidrIp: 0.0.0.0/0               
+      - IpProtocol: tcp
+        FromPort: 4100
+        ToPort: 4100
+        CidrIp: 0.0.0.0/0        
+      - IpProtocol: tcp
+        FromPort: 5100
+        ToPort: 5100
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 30000
+        ToPort: 30000
+        CidrIp: 0.0.0.0/0  
+      - IpProtocol: tcp
+        FromPort: 31000
+        ToPort: 31000
+        CidrIp: 0.0.0.0/0 
+      - IpProtocol: tcp
+        FromPort: 6443
+        ToPort: 6443
+        CidrIp: 0.0.0.0/0   
+      - IpProtocol: tcp
+        FromPort: 10250
+        ToPort: 10250
+        CidrIp: 0.0.0.0/0                            
+#      - IpProtocol: tcp
+#        FromPort: 3306
+#        ToPort: 3306
+#        CidrIp: 192.168.1.0/25
+      SecurityGroupEgress:
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0 
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
+    
+Outputs:
+  InstanceId:
+    Value: !Ref MyEC2Instance
+  MPublicIp:
+    Value: !GetAtt MyEC2Instance.PublicIp

@@ -1,0 +1,201 @@
+#
+#
+# Run this script like this: aws cloudformation create-stack --region us-west-2 --stack-name prodstack --template-body file:///opt/cfstacks/prodstack.template --parameters file:///opt/cfstacks/prodstack_parameters.json
+#
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Private VPC and resources for PROD."
+
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "ami-0d4c3eabb9e72650a"
+      InstanceType: "t2.micro"
+      SubnetId: !Ref mySubnet
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeType: "gp2"
+            #Iops: "200"
+            DeleteOnTermination: "true"
+            VolumeSize: "20"
+        - DeviceName: "/dev/sdk"
+          NoDevice: {}
+      UserData:
+        Fn::Base64:                                # YAML makes userdata much cleaner
+          !Sub |
+              #!/bin/bash -ex
+              /usr/bin/hostnamectl set-hostname ProdMaster;
+              yum -y update;
+              /usr/bin/sed -i -e 's/PasswordAuthentication\ no/PasswordAuthentication\ yes/g' /etc/ssh/sshd_config;
+              /sbin/useradd -p $( /usr/bin/echo '8iu7*IU&' | openssl passwd -1 -stdin) linuxjobber;
+              echo 'linuxjobber  ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers;
+              /usr/bin/systemctl restart sshd.service;
+      Tags:
+      - Key: Name
+        Value: ProdMaster
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+
+
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: LJVPC
+
+  mySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "eu-central-1a"
+      MapPublicIpOnLaunch: True
+      CidrBlock: 10.10.1.0/24
+      Tags:
+      - Key: Name
+        Value: ProdSubnet
+      VpcId: !Ref myVPC
+
+  privateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "eu-central-1a"
+      MapPublicIpOnLaunch: True
+      CidrBlock: 10.10.16.0/20
+      Tags:
+      - Key: Name
+        Value: PrivateSubnet
+      VpcId: !Ref myVPC      
+
+  routeTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: myVPC
+      Tags:
+      - Key: Name
+        Value: prodRouteTable
+
+  publicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: myInternetGateway
+    Properties:
+      RouteTableId:
+        Ref: routeTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: myInternetGateway
+
+  mySubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: mySubnet
+      RouteTableId:
+        Ref: routeTable
+
+  myInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: publicFacingGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref myVPC
+      InternetGatewayId: !Ref myInternetGateway
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "this is PROD required Ports"
+      VpcId:
+        Ref: myVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80 
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 5000
+        ToPort: 5000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 7000
+        ToPort: 7000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 4000
+        ToPort: 4000
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        CidrIp: 0.0.0.0/0    
+      - IpProtocol: tcp
+        FromPort: 8000
+        ToPort: 8000
+        CidrIp: 0.0.0.0/0     
+      - IpProtocol: tcp
+        FromPort: 58500
+        ToPort: 58500
+        CidrIp: 0.0.0.0/0               
+      - IpProtocol: tcp
+        FromPort: 4100
+        ToPort: 4100
+        CidrIp: 0.0.0.0/0        
+      - IpProtocol: tcp
+        FromPort: 5100
+        ToPort: 5100
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 30000
+        ToPort: 30000
+        CidrIp: 0.0.0.0/0  
+      - IpProtocol: tcp
+        FromPort: 31000
+        ToPort: 31000
+        CidrIp: 0.0.0.0/0 
+      - IpProtocol: tcp
+        FromPort: 6443
+        ToPort: 6443
+        CidrIp: 0.0.0.0/0   
+      - IpProtocol: tcp
+        FromPort: 10250
+        ToPort: 10250
+        CidrIp: 0.0.0.0/0                            
+#      - IpProtocol: tcp
+#        FromPort: 3306
+#        ToPort: 3306
+#        CidrIp: 192.168.1.0/25
+      SecurityGroupEgress:
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0 
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
+Outputs:
+  InstanceId:
+    Value: !Ref MyEC2Instance
+  VPCId:
+    Value: !Ref myVPC
+  RouteTableId:
+    Value: !Ref routeTable
+  MPublicIp:
+    Value: !GetAtt MyEC2Instance.PublicIp
