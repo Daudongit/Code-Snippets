@@ -5,11 +5,17 @@
 #           --region us-east-2 \
 #           --stack-name ec2prodstack \
 #           --template-body file://ec2_with_param.yml \
-#           --parameters ParameterKey=SubnetIdParameter,ParameterValue=subnet-6b347d11 ParameterKey=VpcIdParameter,ParameterValue=vpc-8f7c94e4
+#           --parameters ParameterKey=SubnetIdParameter,ParameterValue=subnet-6b347d11 \
+#           ParameterKey=VpcIdParameter,ParameterValue=vpc-8f7c94e4 \
+#           ParameterKey=NameParameter,ParameterValue=intmachine
 #
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Private VPC and resources for PROD."
 Parameters: 
+    NameParameter: 
+      Description: ec2 machine name
+      Type: String
+      Default: ProdMaster
     SubnetIdParameter: 
       Description: subnetId for ec2
       Type: String
@@ -38,7 +44,7 @@ Resources:
         Fn::Base64:                                # YAML makes userdata much cleaner
           !Sub |
               #!/bin/bash -ex
-              /usr/bin/hostnamectl set-hostname ProdMaster;
+              /usr/bin/hostnamectl set-hostname ${NameParameter};
               yum -y update;
               /usr/bin/sed -i -e 's/PasswordAuthentication\ no/PasswordAuthentication\ yes/g' /etc/ssh/sshd_config;
               /sbin/useradd -p $( /usr/bin/echo '8iu7*IU&' | openssl passwd -1 -stdin) linuxjobber;
@@ -46,7 +52,7 @@ Resources:
               /usr/bin/systemctl restart sshd.service;
       Tags:
       - Key: Name
-        Value: ProdMaster
+        Value: !Ref NameParameter
       SecurityGroupIds:
       - !Ref InstanceSecurityGroup
 
