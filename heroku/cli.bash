@@ -8,7 +8,10 @@ heroku login
 heroku create <myappname>
 
 #create Procfile in project root for heroku (Laravel php)
-echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile
+echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile 
+
+#create Procfile in project root for heroku (Django python)
+echo "web: gunicorn openMarket.wsgi  --log-file -" > Procfile 
 
 #create Procfile in project root for heroku(Adonisjs Nodejs)
 echo "web: ENV_SILENT=true npm start" > Procfile
@@ -36,10 +39,15 @@ heroku logs
 heroku config
 
 #run specific command on heroku
-heroku run php artisan migrate
+heroku run php artisan migrate #laravel
+
+heroku run python manage.py migrate #Django
 
 #enter heroku bash mode to run any command
 heroku run bash 
 
 #while running command indicate the --app flag if have more than one app on heroku
 php artisan migrate --app <myappname> #(in bash mode --force)
+
+#sample addon
+heroku addons:create heroku-postgresql:hobby-dev

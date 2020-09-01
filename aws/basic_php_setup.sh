@@ -1,15 +1,39 @@
 #!/bin/bash
 
+#update
+yum update -y
+
+#install basic app
+yum install -y curl wget vim git unzip socat bash-completion epel-release
+
+#install php repo
 yum -y update
 yum -y install epel-release
 rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
-### For PHP 7.2 for later just change 72
+
+#install php and extension
 yum -y --enablerepo=remi-php74 install php php-xml php-soap php-xmlrpc php-mbstring \
                                     php-json php-gd php-mcrypt php-fpm php-zip \
-                                    php-curl php-common php-cli php-mysqlnd
+                                    php-curl php-common php-cli php-mysqlnd \
+                                    php-pear php-devel
+
+#start php-fpm sevice
+systemctl start php-fpm.service
+systemctl enable php-fpm.service
+
+#setting up php-zip
+yum install pcre-devel gcc zlib zlib-devel libzip
+pecl install zip
+
+# Install Composer(worked)
+echo 'Installing composer...'
+curl -s https://getcomposer.org/installer | php
+# Make Composer available globally
+mv composer.phar /usr/local/bin/composer
 
 
-yum -y install nginx unzip wget mariadb-server mariadb-client
+#mysql install
+yum -y install mariadb-server mariadb-client
 yum clean all
 systemctl start mariadb
 systemctl enable mariadb
