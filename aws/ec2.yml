@@ -2,11 +2,11 @@
 #
 # Run this script like this: aws cloudformation create-stack --region us-west-2 --stack-name prodstack --template-body file:///opt/cfstacks/prodstack.template --parameters file:///opt/cfstacks/prodstack_parameters.json
 # OR run aws cloudformation create-stack \
-#           --region us-east-2 \
+#           --region us-east-1 \
 #           --stack-name ec2prodstack \
 #           --template-body file://ec2.yml \
 #           --parameters ParameterKey=NameParameter,ParameterValue=ProdMaster \
-#           ParameterKey=RegionParameter,ParameterValue=us-east-2 \
+#           ParameterKey=RegionParameter,ParameterValue=us-east-1a \
 #           ParameterKey=ImageIdParameter,ParameterValue=ami-0b7cf251b5f4a8cb5 
 
 AWSTemplateFormatVersion: "2010-09-09"
@@ -19,7 +19,7 @@ Parameters:
   RegionParameter: 
     Description: subnetI region
     Type: String
-    Default: us-east-2
+    Default: us-east-1a
   ImageIdParameter: 
     Description: ec2 imageid
     Type: String
